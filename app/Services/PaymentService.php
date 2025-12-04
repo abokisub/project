@@ -67,11 +67,36 @@ class PaymentService
 
             // Initiate transfer via BellBank
             try {
-                $result = $this->bellBankService->transfer($amount, $accountNumber, $bankCode, $narration);
+                // Generate reference if not provided (using business name prefix)
+                $businessName = config('app.name', 'KoboPoint');
+                $prefix = strtoupper(explode(' ', $businessName)[0]);
+                $reference = $prefix . '-' . Str::random(10);
                 
+                $result = $this->bellBankService->transfer(
+                    $amount,
+                    $accountNumber, // beneficiaryAccountNumber
+                    $bankCode, // beneficiaryBankCode
+                    $narration,
+                    $reference,
+                    $user->name // senderName
+                );
+                
+                // Extract transfer data from response
+                $transferData = $result['data'] ?? $result;
+                
+                // Update transaction with BellBank response
                 $transaction->update([
-                    'status' => 'settled',
-                    'meta' => array_merge($transaction->meta ?? [], ['bellbank_response' => $result]),
+                    'status' => $transferData['status'] ?? 'processing', // pending, processing, settled, failed
+                    'reference' => $transferData['reference'] ?? $transaction->reference,
+                    'meta' => array_merge($transaction->meta ?? [], [
+                        'bellbank_response' => $result,
+                        'session_id' => $transferData['sessionId'] ?? null,
+                        'transaction_id' => $transferData['transactionId'] ?? null,
+                        'net_amount' => $transferData['netAmount'] ?? null,
+                        'charge' => $transferData['charge'] ?? null,
+                        'destination_account_name' => $transferData['destinationAccountName'] ?? null,
+                        'destination_bank_name' => $transferData['destinationBankName'] ?? null,
+                    ]),
                 ]);
 
                 return $transaction;

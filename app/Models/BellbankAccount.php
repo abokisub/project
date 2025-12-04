@@ -18,6 +18,7 @@ class BellbankAccount extends Model
         'bank_name',
         'status',
         'created_by_director',
+        'creation_source',
         'metadata',
     ];
 

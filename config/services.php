@@ -36,10 +36,15 @@ return [
     ],
 
     'bellbank' => [
-        'api_url' => env('BELLBANK_API_URL'),
-        'api_key' => env('BELLBANK_API_KEY'),
-        'secret_key' => env('BELLBANK_SECRET_KEY'),
+        'base_url' => env('BELLBANK_BASE_URL', 'https://sandbox-baas-api.bellmfb.com'),
+        'consumer_key' => env('BELLBANK_CONSUMER_KEY'),
+        'consumer_secret' => env('BELLBANK_CONSUMER_SECRET'),
+        'validity_time' => env('BELLBANK_VALIDITY_TIME', 1440), // Default 24 hours in minutes
         'webhook_secret' => env('BELLBANK_WEBHOOK_SECRET'),
+        'director_bvn' => env('BELLBANK_DIRECTOR_BVN'),
+        'director_firstname' => env('BELLBANK_DIRECTOR_FIRSTNAME'),
+        'director_lastname' => env('BELLBANK_DIRECTOR_LASTNAME'),
+        'director_date_of_birth' => env('BELLBANK_DIRECTOR_DATE_OF_BIRTH', '1990/01/01'), // Default DOB for director BVN accounts
     ],
 
 ];

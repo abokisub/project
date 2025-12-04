@@ -42,7 +42,7 @@
             <span>Dashboard</span> <span class="mx-2">/</span> <span class="text-gray-900 font-medium">Main Dashboard</span>
         </nav>
         <h1 class="text-3xl font-bold text-gray-900">Main Dashboard</h1>
-        <p class="mt-1 text-sm text-gray-600">Welcome back, {{ Auth::user()->name }}! Here's what's happening today.</p>
+        <p class="mt-1 text-sm text-gray-600">Welcome back, {{ Auth::user()->first_name }}! Here's what's happening today.</p>
     </div>
 
     <!-- Top Statistics Cards -->

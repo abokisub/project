@@ -5,13 +5,22 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Traits\ApiResponse;
 use App\Models\Merchant;
+use App\Services\BellBankService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class MerchantController extends Controller
 {
     use ApiResponse;
+
+    protected $bellBankService;
+
+    public function __construct(BellBankService $bellBankService)
+    {
+        $this->bellBankService = $bellBankService;
+    }
 
     /**
      * Apply to become a merchant.
@@ -26,6 +35,13 @@ class MerchantController extends Controller
 
         $validator = Validator::make($request->all(), [
             'business_name' => 'required|string|max:255',
+            'rc_number' => 'required|string|max:255',
+            'email_address' => 'required|email',
+            'phone_number' => 'required|string',
+            'address' => 'required|string',
+            'bvn' => 'sometimes|string',
+            'incorporation_date' => 'sometimes|date',
+            'date_of_birth' => 'sometimes|date',
             'settlement_account' => 'sometimes|string',
             'bank_name' => 'sometimes|string',
             'account_number' => 'sometimes|string',
@@ -40,17 +56,62 @@ class MerchantController extends Controller
             return $this->error('You already have a merchant account', 400);
         }
 
-        $merchant = Merchant::create([
-            'user_id' => $request->user()->id,
-            'business_name' => $request->business_name,
-            'qr_code' => 'KP' . Str::random(12),
-            'settlement_account' => $request->settlement_account,
-            'bank_name' => $request->bank_name,
-            'account_number' => $request->account_number,
-            'status' => 'pending',
-        ]);
+        try {
+            // Create merchant record
+            $merchant = Merchant::create([
+                'user_id' => $request->user()->id,
+                'business_name' => $request->business_name,
+                'qr_code' => 'KP' . Str::random(12),
+                'settlement_account' => $request->settlement_account,
+                'bank_name' => $request->bank_name,
+                'account_number' => $request->account_number,
+                'status' => 'pending',
+            ]);
 
-        return $this->success($merchant, 'Merchant application submitted successfully', 201);
+            // Create corporate virtual account via BellBank
+            try {
+                $corporateData = [
+                    'rcNumber' => $request->rc_number,
+                    'businessName' => $request->business_name,
+                    'emailAddress' => $request->email_address,
+                    'phoneNumber' => $request->phone_number,
+                    'address' => $request->address,
+                ];
+
+                // Add optional fields
+                if ($request->bvn) {
+                    $corporateData['bvn'] = $request->bvn;
+                }
+                if ($request->incorporation_date) {
+                    $corporateData['incorporationDate'] = $request->incorporation_date;
+                }
+                if ($request->date_of_birth) {
+                    $corporateData['dateOfBirth'] = $request->date_of_birth;
+                }
+
+                $virtualAccount = $this->bellBankService->createCorporateVirtualAccount(
+                    $request->user()->id,
+                    $corporateData
+                );
+
+                // Update merchant with virtual account info
+                $merchant->update([
+                    'settlement_account' => $virtualAccount->account_number,
+                    'bank_name' => $virtualAccount->bank_name,
+                    'account_number' => $virtualAccount->account_number,
+                ]);
+
+                Log::info("Corporate virtual account created for merchant {$merchant->id}");
+            } catch (\Exception $e) {
+                Log::error("Failed to create corporate virtual account for merchant {$merchant->id}: " . $e->getMessage());
+                // Don't fail the merchant creation, just log the error
+            }
+
+            return $this->success($merchant, 'Merchant application submitted successfully', 201);
+        } catch (\Exception $e) {
+            Log::error("Merchant application failed: " . $e->getMessage());
+            return $this->error('Failed to submit merchant application: ' . $e->getMessage(), 500);
+        }
     }
 
     /**

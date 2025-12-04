@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Traits\ApiResponse;
 use App\Services\WalletService;
+use App\Services\BellBankService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -13,10 +14,12 @@ class WalletController extends Controller
     use ApiResponse;
 
     protected $walletService;
+    protected $bellBankService;
 
-    public function __construct(WalletService $walletService)
+    public function __construct(WalletService $walletService, BellBankService $bellBankService)
     {
         $this->walletService = $walletService;
+        $this->bellBankService = $bellBankService;
     }
 
     /**
@@ -117,6 +120,117 @@ class WalletController extends Controller
         }
 
         return $this->success($account, 'Virtual account retrieved successfully');
+    }
+
+    /**
+     * List all virtual accounts (admin only or for current user).
+     */
+    public function listVirtualAccounts(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'account_type' => 'sometimes|string|in:individual,corporate',
+                'validity_type' => 'sometimes|string',
+                'status' => 'sometimes|string',
+                'page' => 'sometimes|integer|min:1',
+                'limit' => 'sometimes|integer|min:1|max:100',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->error('Validation failed', 422, $validator->errors());
+            }
+
+            $filters = [
+                'accountType' => $request->account_type,
+                'validityType' => $request->validity_type,
+                'status' => $request->status,
+                'page' => $request->page,
+                'limit' => $request->limit,
+            ];
+
+            // Remove null values
+            $filters = array_filter($filters, function($value) {
+                return $value !== null;
+            });
+
+            $response = $this->bellBankService->listVirtualAccounts($filters);
+            
+            // Extract data from response
+            $data = $response['data'] ?? $response;
+
+            return $this->success($data, 'Virtual accounts retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 400);
+        }
+    }
+
+    /**
+     * Get a specific client account by ID.
+     */
+    public function getClientAccount(Request $request, $clientId)
+    {
+        try {
+            $account = $this->bellBankService->getClientAccount($clientId);
+            
+            // Extract data from response
+            $data = $account['data'] ?? $account;
+
+            return $this->success($data, 'Client account retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 400);
+        }
+    }
+
+    /**
+     * Get virtual account transactions.
+     */
+    public function virtualAccountTransactions(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'virtual_account_id' => 'required|string',
+            'page' => 'sometimes|integer|min:1',
+            'limit' => 'sometimes|integer|min:1|max:100',
+            'date_from' => 'sometimes|date',
+            'date_to' => 'sometimes|date|after_or_equal:date_from',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Validation failed', 422, $validator->errors());
+        }
+
+        try {
+            $filters = $request->only(['page', 'limit', 'date_from', 'date_to']);
+            $transactions = $this->bellBankService->getVirtualAccountTransactions(
+                $request->virtual_account_id,
+                $filters
+            );
+
+            return $this->success($transactions, 'Virtual account transactions retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 400);
+        }
+    }
+
+    /**
+     * Get main business account information (admin only).
+     */
+    public function getAccountInfo(Request $request)
+    {
+        try {
+            // Check if user is admin
+            if (!$request->user()->hasRole('admin')) {
+                return $this->error('Unauthorized. Admin access required.', 403);
+            }
+
+            $response = $this->bellBankService->getAccountInfo();
+            
+            // Extract data from response
+            $data = $response['data'] ?? $response;
+
+            return $this->success($data, 'Account information retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 400);
+        }
     }
 }
 

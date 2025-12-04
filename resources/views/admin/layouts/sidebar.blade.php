@@ -105,7 +105,7 @@
                         <li><a href="#" data-route="wallets/user" class="flex items-center px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 hover:text-green-700"><i class="fas fa-circle text-xs mr-3"></i>User Wallets</a></li>
                         <li><a href="#" data-route="wallets/merchant" class="flex items-center px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 hover:text-green-700"><i class="fas fa-circle text-xs mr-3"></i>Merchant Wallets</a></li>
                         <li><a href="#" data-route="wallets/settlements" class="flex items-center px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 hover:text-green-700"><i class="fas fa-circle text-xs mr-3"></i>Settlements</a></li>
-                        <li><a href="#" data-route="wallets/virtual" class="flex items-center px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 hover:text-green-700"><i class="fas fa-circle text-xs mr-3"></i>Virtual Accounts</a></li>
+                        <li><a href="{{ route('admin.virtual-accounts') }}" data-route="wallets/virtual" class="flex items-center px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 hover:text-green-700"><i class="fas fa-circle text-xs mr-3"></i>Virtual Accounts</a></li>
                         <li><a href="#" data-route="wallets/funding" class="flex items-center px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 hover:text-green-700"><i class="fas fa-circle text-xs mr-3"></i>Funding Logs</a></li>
                     </ul>
                 </li>

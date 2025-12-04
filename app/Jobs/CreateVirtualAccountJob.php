@@ -47,8 +47,14 @@ class CreateVirtualAccountJob implements ShouldQueue
                 return;
             }
 
-            $bellBankService->createVirtualAccount($this->userId, $this->useDirectorBvn);
-            Log::info("Virtual account created successfully for user {$this->userId}");
+            // Determine if we should use director BVN
+            // Use director BVN if: explicitly set OR user doesn't have BVN
+            $shouldUseDirectorBvn = $this->useDirectorBvn || empty($user->bvn);
+            
+            $bellBankService->createVirtualAccount($this->userId, $shouldUseDirectorBvn, [
+                'creation_source' => 'auto_registration'
+            ]);
+            Log::info("Virtual account created successfully for user {$this->userId} using " . ($shouldUseDirectorBvn ? 'director BVN' : 'user BVN'));
         } catch (\Exception $e) {
             Log::error("Failed to create virtual account for user {$this->userId}: " . $e->getMessage());
             throw $e;

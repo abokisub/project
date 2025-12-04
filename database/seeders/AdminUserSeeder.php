@@ -22,13 +22,15 @@ class AdminUserSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['email' => 'admin@kobopoint.com'],
             [
-                'name' => 'Admin User',
+                'first_name' => 'Admin',
+                'last_name' => 'User',
                 'phone' => '+2348000000001',
                 'password' => Hash::make('admin123'),
                 'kyc_status' => 'approved',
                 'user_tier' => 'tier5',
                 'email_verified_at' => now(),
                 'phone_verified_at' => now(),
+                // api_key and app_key will be auto-generated
             ]
         );
 

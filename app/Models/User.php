@@ -31,14 +31,23 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
+        'username',
+        'gender',
+        'state',
+        'city',
+        'street_address',
         'email',
         'phone',
         'password',
+        'transaction_pin',
         'bvn',
         'kyc_status',
         'kyc_data',
         'user_tier', // tier1, tier2, tier3, tier4, tier5
+        'api_key',
+        'app_key',
     ];
 
     /**
@@ -48,8 +57,11 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'transaction_pin',
         'remember_token',
         'bvn',
+        'api_key',
+        'app_key',
     ];
 
     /**
@@ -68,6 +80,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'phone_verified_at' => 'datetime',
             'password' => 'hashed',
+            'transaction_pin' => 'hashed',
             'kyc_data' => 'array',
         ];
     }
@@ -78,9 +91,59 @@ class User extends Authenticatable
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email', 'phone', 'kyc_status', 'user_tier'])
+            ->logOnly(['first_name', 'last_name', 'username', 'email', 'phone', 'kyc_status', 'user_tier'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Generate API and App keys when user is created
+        static::creating(function ($user) {
+            if (empty($user->api_key)) {
+                $user->api_key = self::generateApiKey();
+            }
+            if (empty($user->app_key)) {
+                $user->app_key = self::generateAppKey();
+            }
+        });
+    }
+
+    /**
+     * Generate a unique API key.
+     */
+    public static function generateApiKey(): string
+    {
+        do {
+            $key = 'kp_' . bin2hex(random_bytes(24));
+        } while (self::where('api_key', $key)->exists());
+
+        return $key;
+    }
+
+    /**
+     * Generate a unique App key.
+     */
+    public static function generateAppKey(): string
+    {
+        do {
+            $key = 'app_' . bin2hex(random_bytes(24));
+        } while (self::where('app_key', $key)->exists());
+
+        return $key;
+    }
+
+    /**
+     * Get full name attribute (accessor).
+     */
+    public function getNameAttribute(): string
+    {
+        return trim($this->first_name . ' ' . $this->last_name);
     }
 
     /**

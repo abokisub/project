@@ -32,19 +32,22 @@ class SeedSampleData extends Command
         // Create sample users if they don't exist
         $users = [
             [
-                'name' => 'Admin User',
+                'first_name' => 'Admin',
+                'last_name' => 'User',
                 'email' => 'admin@kobopoint.com',
                 'phone' => '+2348000000001',
                 'password' => bcrypt('password'),
-                'is_admin' => true,
                 'kyc_status' => 'approved',
+                'user_tier' => 'tier5',
             ],
             [
-                'name' => 'Test User',
+                'first_name' => 'Test',
+                'last_name' => 'User',
                 'email' => 'test@kobopoint.com',
                 'phone' => '+2348000000002',
                 'password' => bcrypt('password'),
                 'kyc_status' => 'approved',
+                'user_tier' => 'tier1',
             ],
         ];
 
